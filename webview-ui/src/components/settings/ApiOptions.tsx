@@ -107,6 +107,7 @@ import {
 	VercelAiGateway,
 	DeepInfra,
 	OvhCloudAiEndpoints, // kilocode_change
+	AzureOpenAIEntra,
 } from "./providers"
 
 import { MODELS_BY_PROVIDER, PROVIDERS } from "./constants"
@@ -791,6 +792,13 @@ const ApiOptions = ({
 
 			{selectedProvider === "featherless" && (
 				<Featherless apiConfiguration={apiConfiguration} setApiConfigurationField={setApiConfigurationField} />
+			)}
+
+			{selectedProvider === "azure-openai-entra" && (
+				<AzureOpenAIEntra
+					apiConfiguration={apiConfiguration}
+					setApiConfigurationField={setApiConfigurationField}
+				/>
 			)}
 
 			{selectedProviderModels.length > 0 && (
