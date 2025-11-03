@@ -4,6 +4,7 @@ import { Anthropic } from "@anthropic-ai/sdk"
 import type { ChatCompletionMessageParam, ChatCompletionContentPart } from "openai/resources/chat/completions"
 
 import type { ModelInfo, ProviderSettings } from "@roo-code/types"
+import { azureOpenAIModels, AZURE_OPENAI_DEFAULT_TEMPERATURE } from "@roo-code/types"
 
 import { BaseProvider } from "./base-provider"
 import { ApiStream, ApiStreamTextChunk, ApiStreamUsageChunk, ApiStreamError } from "../transform/stream"
@@ -18,63 +19,26 @@ export class AzureOpenAIEntraHandler extends BaseProvider {
 		super()
 		this.options = options
 
-		// Set up model info - use openAiCustomModelInfo if available, otherwise use defaults
+		// Set up model info - use azureOpenAIModels configuration
 		const modelId = options.azureOpenAiDeploymentName || "gpt-4"
+		const modelInfo = azureOpenAIModels[modelId as keyof typeof azureOpenAIModels]
+
 		this.model = {
 			id: modelId,
-			info: {
-				maxTokens: this.getMaxTokensForModel(modelId), // Dynamically determine max tokens
+			info: modelInfo || {
+				maxTokens: 4096,
 				contextWindow: 128000,
-				supportsImages: modelId.includes("vision") || modelId.includes("gpt-4o"),
+				supportsImages: false,
 				supportsPromptCache: false,
-				inputPrice: 0.01, // Placeholder pricing
+				inputPrice: 0.01,
 				outputPrice: 0.03,
 				description: `Azure OpenAI ${modelId} with Entra ID authentication`,
 			},
 		}
 
 		if (!this.options.modelTemperature) {
-			this.options.modelTemperature = 0.3 // Default temperature
+			this.options.modelTemperature = AZURE_OPENAI_DEFAULT_TEMPERATURE
 		}
-	}
-
-	private getMaxTokensForModel(modelId: string): number {
-		// Azure OpenAI models have specific token limits based on common GPT models
-		// These values are based on Azure OpenAI documentation and common model capabilities
-
-		// GPT-5 series (if available in Azure OpenAI)
-		if (modelId.includes("gpt-5-preview")) {
-			return 32768
-		} else if (modelId.includes("gpt-5-turbo")) {
-			return 32768
-		} else if (modelId.includes("gpt-5-mini")) {
-			return 16384
-		} else if (modelId.includes("gpt-5")) {
-			return 32768
-		}
-		// GPT-4o series
-		else if (modelId.includes("gpt-4o-mini")) {
-			return 16384
-		} else if (modelId.includes("gpt-4o")) {
-			return 16384
-		}
-		// GPT-4 series
-		else if (modelId.includes("gpt-4-turbo")) {
-			return 4096
-		} else if (modelId.includes("gpt-4-32k")) {
-			return 32768
-		} else if (modelId.includes("gpt-4")) {
-			return 8192
-		}
-		// GPT-3.5 series
-		else if (modelId.includes("gpt-35-turbo-16k")) {
-			return 16384
-		} else if (modelId.includes("gpt-35-turbo")) {
-			return 4096
-		}
-
-		// Default fallback for unknown models
-		return 16384
 	}
 
 	private async getClient(): Promise<AzureOpenAI> {
@@ -82,14 +46,14 @@ export class AzureOpenAIEntraHandler extends BaseProvider {
 			return this.client
 		}
 
-		// 使用 @azure/identity SDK 获取凭据
+		// Use @azure/identity SDK to get credentials
 		const credential = new ClientSecretCredential(
 			this.options.azureADTenantId!,
 			this.options.azureADClientId!,
 			this.options.azureADClientSecret!,
 		)
 
-		// 初始化 Azure OpenAI 客户端，使用 azureADTokenProvider
+		// Initialize Azure OpenAI client using azureADTokenProvider
 		this.client = new AzureOpenAI({
 			azureADTokenProvider: async () => {
 				const token = await credential.getToken("https://cognitiveservices.azure.com/.default")

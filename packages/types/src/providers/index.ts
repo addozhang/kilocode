@@ -1,4 +1,5 @@
 export * from "./anthropic.js"
+export * from "./azure-openai.js"
 export * from "./bedrock.js"
 export * from "./cerebras.js"
 export * from "./chutes.js"
