@@ -457,6 +457,11 @@ function getSelectedModel({
 			return { id, info }
 		}
 		// kilocode_change end
+		case "azure-openai-entra": {
+			const id = apiConfiguration.apiModelId ?? ""
+			const info = apiConfiguration?.openAiCustomModelInfo ?? openAiModelInfoSaneDefaults
+			return { id, info }
+		}
 		// case "anthropic":
 		// case "human-relay":
 		// case "fake-ai":

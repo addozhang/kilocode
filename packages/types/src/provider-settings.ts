@@ -154,6 +154,7 @@ export const providerNames = [
 	"vertex",
 	"xai",
 	"zai",
+	"azure-openai-entra",
 ] as const
 
 export const providerNamesSchema = z.enum(providerNames)
@@ -485,6 +486,15 @@ const rooSchema = apiModelIdProviderModelSchema.extend({
 	// No additional fields needed - uses cloud authentication.
 })
 
+const azureOpenAIEntraSchema = apiModelIdProviderModelSchema.extend({
+	azureOpenAiBaseUrl: z.string().optional(),
+	azureOpenAiDeploymentName: z.string().optional(),
+	azureOpenAiApiVersion: z.string().optional(),
+	azureADTenantId: z.string().optional(),
+	azureADClientId: z.string().optional(),
+	azureADClientSecret: z.string().optional(),
+})
+
 const vercelAiGatewaySchema = baseProviderSettingsSchema.extend({
 	vercelAiGatewayApiKey: z.string().optional(),
 	vercelAiGatewayModelId: z.string().optional(),
@@ -536,6 +546,7 @@ export const providerSettingsSchemaDiscriminated = z.discriminatedUnion("apiProv
 	ioIntelligenceSchema.merge(z.object({ apiProvider: z.literal("io-intelligence") })),
 	qwenCodeSchema.merge(z.object({ apiProvider: z.literal("qwen-code") })),
 	rooSchema.merge(z.object({ apiProvider: z.literal("roo") })),
+	azureOpenAIEntraSchema.merge(z.object({ apiProvider: z.literal("azure-openai-entra") })),
 	vercelAiGatewaySchema.merge(z.object({ apiProvider: z.literal("vercel-ai-gateway") })),
 	defaultSchema,
 ])
@@ -582,6 +593,7 @@ export const providerSettingsSchema = z.object({
 	...ioIntelligenceSchema.shape,
 	...qwenCodeSchema.shape,
 	...rooSchema.shape,
+	...azureOpenAIEntraSchema.shape,
 	...vercelAiGatewaySchema.shape,
 	...codebaseIndexProviderSchema.shape,
 	...ovhcloudSchema.shape, // kilocode_change
@@ -676,6 +688,7 @@ export const modelIdKeysByProvider: Record<TypicalProvider, ModelIdKey> = {
 	kilocode: "kilocodeModel",
 	"virtual-quota-fallback": "apiModelId",
 	ovhcloud: "ovhCloudAiEndpointsModelId", // kilocode_change
+	"azure-openai-entra": "apiModelId",
 }
 
 /**
@@ -820,4 +833,7 @@ export const MODELS_BY_PROVIDER: Record<
 	// Local providers; models discovered from localhost endpoints.
 	lmstudio: { id: "lmstudio", label: "LM Studio", models: [] },
 	ollama: { id: "ollama", label: "Ollama", models: [] },
+
+	// Azure OpenAI Entra provider; models configured manually.
+	"azure-openai-entra": { id: "azure-openai-entra", label: "Azure OpenAI (Entra ID)", models: [] },
 }
